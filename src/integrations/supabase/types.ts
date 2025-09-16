@@ -14,7 +14,83 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      event_attendees: {
+        Row: {
+          attendee_email: string
+          attendee_name: string
+          event_id: string
+          id: string
+          registered_at: string
+        }
+        Insert: {
+          attendee_email: string
+          attendee_name: string
+          event_id: string
+          id?: string
+          registered_at?: string
+        }
+        Update: {
+          attendee_email?: string
+          attendee_name?: string
+          event_id?: string
+          id?: string
+          registered_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_attendees_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      events: {
+        Row: {
+          created_at: string
+          date: string
+          description: string | null
+          id: string
+          image_url: string | null
+          location: string
+          max_attendees: number | null
+          organizer_email: string
+          organizer_name: string
+          tags: string[] | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          date: string
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          location: string
+          max_attendees?: number | null
+          organizer_email: string
+          organizer_name: string
+          tags?: string[] | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          date?: string
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          location?: string
+          max_attendees?: number | null
+          organizer_email?: string
+          organizer_name?: string
+          tags?: string[] | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
