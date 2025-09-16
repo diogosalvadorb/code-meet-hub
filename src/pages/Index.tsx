@@ -5,6 +5,8 @@ import { EventCard } from "@/components/EventCard";
 import { CreateEventDialog } from "@/components/CreateEventDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
+import UserMenu from "@/components/UserMenu";
 import heroImage from "@/assets/hero-meetup.jpg";
 
 interface Event {
@@ -24,6 +26,7 @@ const Index = () => {
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
+  const { user } = useAuth();
 
   const fetchEvents = async () => {
     try {
@@ -81,33 +84,33 @@ const Index = () => {
           <div className="absolute inset-0 bg-background/90 backdrop-blur-sm"></div>
         </div>
         
-        <div className="relative container mx-auto px-4 py-24 text-center">
-          <div className="max-w-4xl mx-auto space-y-8">
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass text-sm text-muted-foreground">
-              <Sparkles className="w-4 h-4 text-primary" />
-              Conecte-se com desenvolvedores
-            </div>
-            
-            <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold tracking-tight">
-              <span className="text-foreground">Code</span>
-              <span className="bg-gradient-hero bg-clip-text text-transparent"> Meet</span>
-              <span className="text-foreground"> Hub</span>
+        <div className="absolute inset-0 bg-black/40" />
+        <div className="relative z-10 container mx-auto px-4 h-full flex items-center justify-between">
+          <div className="text-white max-w-2xl">
+            <h1 className="text-4xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-white to-cyan-200 bg-clip-text text-transparent">
+              Code Meet Hub
             </h1>
-            
-            <p className="text-xl md:text-2xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
-              Descubra eventos de tecnologia, conecte-se com desenvolvedores e 
-              participe da comunidade tech mais vibrante do Brasil
+            <p className="text-xl md:text-2xl mb-8 text-gray-200">
+              Conecte-se com desenvolvedores, aprenda novas tecnologias e faça networking na comunidade tech.
             </p>
-            
-            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center pt-6">
+            <div className="flex flex-col sm:flex-row gap-4">
               <CreateEventDialog onEventCreated={fetchEvents} />
-              
-              <Button variant="outline" size="lg" className="glass hover-glow">
-                <Calendar className="w-4 h-4 mr-2" />
-                Ver Próximos Eventos
+              <Button 
+                variant="outline" 
+                size="lg" 
+                className="border-white/20 text-white hover:bg-white/10"
+                onClick={() => document.getElementById('events')?.scrollIntoView({ behavior: 'smooth' })}
+              >
+                Ver Eventos
               </Button>
             </div>
           </div>
+          <div className="hidden md:block">
+            <UserMenu />
+          </div>
+        </div>
+        <div className="absolute top-4 right-4 md:hidden">
+          <UserMenu />
         </div>
       </section>
 

@@ -8,6 +8,8 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
+import { useNavigate } from "react-router-dom";
 
 export const CreateEventDialog = ({ onEventCreated }: { onEventCreated?: () => void }) => {
   const [open, setOpen] = useState(false);
@@ -15,6 +17,8 @@ export const CreateEventDialog = ({ onEventCreated }: { onEventCreated?: () => v
   const [tags, setTags] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState("");
   const { toast } = useToast();
+  const { user, session } = useAuth();
+  const navigate = useNavigate();
 
   const [formData, setFormData] = useState({
     title: "",
@@ -45,6 +49,17 @@ export const CreateEventDialog = ({ onEventCreated }: { onEventCreated?: () => v
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!user || !session) {
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "Você precisa estar logado para criar um evento.",
+      });
+      navigate('/auth');
+      return;
+    }
+    
     setLoading(true);
 
     try {
@@ -61,7 +76,8 @@ export const CreateEventDialog = ({ onEventCreated }: { onEventCreated?: () => v
           organizer_name: formData.organizer_name,
           organizer_email: formData.organizer_email,
           image_url: formData.image_url || null,
-          tags: tags.length > 0 ? tags : null
+          tags: tags.length > 0 ? tags : null,
+          user_id: user.id
         });
 
       if (error) throw error;
