@@ -10,6 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
+import { validateEventData, sanitizeFormData, sanitizeInput } from "@/lib/validation";
 
 export const CreateEventDialog = ({ onEventCreated }: { onEventCreated?: () => void }) => {
   const [open, setOpen] = useState(false);
@@ -37,8 +38,9 @@ export const CreateEventDialog = ({ onEventCreated }: { onEventCreated?: () => v
   };
 
   const addTag = () => {
-    if (tagInput.trim() && !tags.includes(tagInput.trim())) {
-      setTags(prev => [...prev, tagInput.trim()]);
+    const sanitizedTag = sanitizeInput(tagInput);
+    if (sanitizedTag && !tags.includes(sanitizedTag) && tags.length < 10) {
+      setTags(prev => [...prev, sanitizedTag]);
       setTagInput("");
     }
   };
@@ -60,23 +62,47 @@ export const CreateEventDialog = ({ onEventCreated }: { onEventCreated?: () => v
       return;
     }
     
+    // Sanitize and validate form data
+    const sanitizedData = sanitizeFormData(formData);
+    const validation = validateEventData(sanitizedData);
+    
+    if (!validation.isValid) {
+      toast({
+        variant: "destructive",
+        title: "Erro de validação",
+        description: validation.errors.join(', '),
+      });
+      return;
+    }
+    
+    // Validate tags
+    const sanitizedTags = tags.map(tag => sanitizeInput(tag)).filter(Boolean);
+    if (sanitizedTags.length !== tags.length) {
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "Algumas tags contêm caracteres inválidos.",
+      });
+      return;
+    }
+    
     setLoading(true);
 
     try {
-      const eventDateTime = new Date(`${formData.date}T${formData.time}`);
+      const eventDateTime = new Date(`${sanitizedData.date}T${sanitizedData.time}`);
       
       const { error } = await supabase
         .from('events')
         .insert({
-          title: formData.title,
-          description: formData.description || null,
+          title: sanitizedData.title,
+          description: sanitizedData.description || null,
           date: eventDateTime.toISOString(),
-          location: formData.location,
-          max_attendees: formData.max_attendees ? parseInt(formData.max_attendees) : null,
-          organizer_name: formData.organizer_name,
-          organizer_email: formData.organizer_email,
-          image_url: formData.image_url || null,
-          tags: tags.length > 0 ? tags : null,
+          location: sanitizedData.location,
+          max_attendees: sanitizedData.max_attendees ? parseInt(sanitizedData.max_attendees) : null,
+          organizer_name: sanitizedData.organizer_name,
+          organizer_email: sanitizedData.organizer_email,
+          image_url: sanitizedData.image_url || null,
+          tags: sanitizedTags.length > 0 ? sanitizedTags : null,
           user_id: user.id
         });
 
@@ -102,10 +128,19 @@ export const CreateEventDialog = ({ onEventCreated }: { onEventCreated?: () => v
       setTags([]);
       setOpen(false);
       onEventCreated?.();
-    } catch (error) {
+    } catch (error: any) {
+      let errorMessage = "Tente novamente em alguns instantes.";
+      
+      // Handle specific database errors without exposing system details
+      if (error?.code === '23505') {
+        errorMessage = "Já existe um evento com essas informações.";
+      } else if (error?.code === '23502') {
+        errorMessage = "Todos os campos obrigatórios devem ser preenchidos.";
+      }
+      
       toast({
         title: "Erro ao criar evento",
-        description: "Tente novamente em alguns instantes.",
+        description: errorMessage,
         variant: "destructive"
       });
     } finally {

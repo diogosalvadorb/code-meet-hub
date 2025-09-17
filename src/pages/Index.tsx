@@ -17,7 +17,7 @@ interface Event {
   location: string;
   max_attendees?: number;
   organizer_name: string;
-  organizer_email: string;
+  organizer_email?: string; // Optional due to RLS policies
   image_url?: string;
   tags?: string[];
 }
@@ -30,14 +30,27 @@ const Index = () => {
 
   const fetchEvents = async () => {
     try {
+      // Fetch basic event info (organizer_email only visible to event owners)
       const { data, error } = await supabase
         .from('events')
-        .select('*')
+        .select('id, title, description, date, location, max_attendees, organizer_name, image_url, tags, organizer_email')
         .order('date', { ascending: true });
 
       if (error) throw error;
-      setEvents(data || []);
+      
+      // Filter out past events and sanitize data
+      const now = new Date();
+      const filteredEvents = (data || [])
+        .filter(event => new Date(event.date) > now)
+        .map(event => ({
+          ...event,
+          // Ensure we don't display organizer_email in public view if RLS blocks it
+          organizer_email: event.organizer_email || undefined
+        }));
+        
+      setEvents(filteredEvents);
     } catch (error) {
+      console.error('Error fetching events:', error);
       toast({
         title: "Erro ao carregar eventos",
         description: "Tente recarregar a página.",
